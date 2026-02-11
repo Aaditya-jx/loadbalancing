@@ -1,0 +1,201 @@
+version: '3.8'
+
+services:
+  # AI Model Training Service (Development)
+  ai-model:
+    build:
+      context: .
+      target: model-trainer
+    container_name: ai-model-trainer-dev
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./ai_model:/app/ai_model
+    environment:
+      - PYTHONPATH=/app
+      - LOG_LEVEL=DEBUG
+    networks:
+      - secure-lb-network
+    profiles:
+      - training
+
+  # Load Balancer Service (Development)
+  load-balancer:
+    build:
+      context: .
+      target: load-balancer
+    container_name: secure-load-balancer-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./load_balancer:/app/load_balancer
+      - ./ai_model:/app/ai_model
+    environment:
+      - PYTHONPATH=/app
+      - LB_HOST=0.0.0.0
+      - LB_PORT=8000
+      - ENABLE_AI_SECURITY=true
+      - BLOCK_MALICIOUS_REQUESTS=true
+      - DB_TYPE=sqlite
+      - SQLITE_DB_PATH=/app/logs/load_balancer.db
+      - MODEL_CONFIDENCE_THRESHOLD=0.7
+      - LB_ALGORITHM=least_connections
+      - HEALTH_CHECK_INTERVAL=30
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      - backend-server-1
+      - backend-server-2
+      - backend-server-3
+    networks:
+      - secure-lb-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Backend Server 1 (Development)
+  backend-server-1:
+    build:
+      context: ./servers
+      dockerfile: Dockerfile.server1
+    container_name: backend-server-1-dev
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./servers:/app/servers
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - SERVER_ID=server-1
+      - SERVER_PORT=8001
+      - LOG_LEVEL=DEBUG
+    networks:
+      - secure-lb-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Backend Server 2 (Development)
+  backend-server-2:
+    build:
+      context: ./servers
+      dockerfile: Dockerfile.server2
+    container_name: backend-server-2-dev
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./servers:/app/servers
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - SERVER_ID=server-2
+      - SERVER_PORT=8002
+      - LOG_LEVEL=DEBUG
+    networks:
+      - secure-lb-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Backend Server 3 (Development)
+  backend-server-3:
+    build:
+      context: ./servers
+      dockerfile: Dockerfile.server3
+    container_name: backend-server-3-dev
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./servers:/app/servers
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - SERVER_ID=server-3
+      - SERVER_PORT=8003
+      - LOG_LEVEL=DEBUG
+    networks:
+      - secure-lb-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Dashboard Service (Development)
+  dashboard:
+    build:
+      context: ./dashboard
+    container_name: secure-lb-dashboard-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/app/logs
+      - ./dashboard:/app/dashboard
+    environment:
+      - PYTHONPATH=/app
+      - DB_PATH=/app/logs/load_balancer.db
+      - LOG_LEVEL=DEBUG
+      - FLASK_DEBUG=1
+    depends_on:
+      - load-balancer
+    networks:
+      - secure-lb-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Traffic Generator (Development)
+  traffic-generator:
+    build:
+      context: ./traffic
+      dockerfile: Dockerfile
+    container_name: traffic-generator-dev
+    volumes:
+      - ./traffic:/app/traffic
+    environment:
+      - LOAD_BALANCER_URL=http://load-balancer:8000
+      - PYTHONPATH=/app
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      - load-balancer
+    networks:
+      - secure-lb-network
+    profiles:
+      - testing
+    command: ["python", "wait_for_lb.py", "&&", "python", "traffic_generator.py"]
+
+networks:
+  secure-lb-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  models:
+    driver: local
+  logs:
+    driver: local
+  data:
+    driver: local

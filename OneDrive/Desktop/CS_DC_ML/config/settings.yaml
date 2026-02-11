@@ -1,0 +1,84 @@
+# AI-Powered Secure Load Balancer Configuration
+
+# Load Balancer Settings
+load_balancer:
+  host: "0.0.0.0"
+  port: 8000
+  algorithm: "least_connections"  # Options: round_robin, least_connections, weighted_round_robin
+  
+  # Backend Servers
+  backend_servers:
+    - host: "localhost"
+      port: 8001
+      weight: 1
+    - host: "localhost"
+      port: 8002
+      weight: 1
+    - host: "localhost"
+      port: 8003
+      weight: 1
+
+# Security Settings
+security:
+  enable_ai_security: true
+  block_malicious_requests: true
+  model_confidence_threshold: 0.7
+  
+  # AI Model Settings
+  ai_model:
+    model_path: "models/intrusion_detection_model.pkl"
+    scaler_path: "models/scaler.pkl"
+    feature_columns_path: "models/feature_columns.pkl"
+    label_encoders_path: "models/label_encoders.pkl"
+
+# Health Check Settings
+health_check:
+  interval: 30  # seconds
+  timeout: 5    # seconds
+  path: "/health"
+
+# Logging Settings
+logging:
+  level: "INFO"
+  file: "logs/load_balancer.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Database Settings
+database:
+  type: "sqlite"  # Options: sqlite, mongodb
+  sqlite:
+    path: "logs/load_balancer.db"
+  mongodb:
+    uri: "mongodb://localhost:27017/"
+    database: "load_balancer"
+
+# Request Settings
+request:
+  timeout: 30  # seconds
+  max_retries: 3
+
+# Metrics Settings
+metrics:
+  collection_interval: 60  # seconds
+
+# CORS Settings
+cors:
+  origins: ["*"]
+
+# Dashboard Settings
+dashboard:
+  host: "0.0.0.0"
+  port: 5000
+  debug: false
+
+# Traffic Generator Settings
+traffic_generator:
+  load_balancer_url: "http://localhost:8000"
+  default_duration: 180  # seconds
+  default_requests_per_second: 10
+  default_attack_ratio: 0.2
+
+# Docker Settings
+docker:
+  network: "secure-lb-network"
+  subnet: "172.20.0.0/16"

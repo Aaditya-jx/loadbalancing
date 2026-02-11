@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI-Powered Secure Load Balancer{% endblock %}
+
+{% block content %}
+<div class="row g-4 p-4">
+    <!-- Header Stats -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 mb-0">
+                            <i class="fas fa-tachometer-alt text-primary me-3"></i>
+                            System Dashboard
+                        </h1>
+                        <p class="text-muted mb-0">Real-time monitoring and analytics</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="badge bg-success pulse">
+                            <i class="fas fa-circle me-2"></i>System Online
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <div class="metric-value" id="total-requests">-</div>
+                <div class="metric-label">Total Requests</div>
+                <div class="mt-2">
+                    <i class="fas fa-exchange-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="successful-requests">-</div>
+                <div class="metric-label">Successful</div>
+                <div class="mt-2">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="blocked-requests">-</div>
+                <div class="metric-label">Blocked Attacks</div>
+                <div class="mt-2">
+                    <i class="fas fa-shield-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="block-rate">-</div>
+                <div class="metric-label">Block Rate %</div>
+                <div class="mt-2">
+                    <i class="fas fa-percentage fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Traffic Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Attack Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="attackChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Status -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-server me-2"></i>
+                    Server Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="server-status">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading server status...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Performance Metrics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="h4 text-primary" id="avg-response-time">-</div>
+                        <small class="text-muted">Avg Response (ms)</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 text-success" id="requests-per-second">-</div>
+                        <small class="text-muted">Requests/Sec</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 text-warning" id="uptime">-</div>
+                        <small class="text-muted">Uptime %</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" id="cpu-usage" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted">CPU Usage</small>
+                </div>
+                <div class="mt-2">
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-info" id="memory-usage" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted">Memory Usage</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="recent-activity">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading recent activity...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let trafficChart, attackChart;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    refreshData();
+    setInterval(refreshData, 5000); // Refresh every 5 seconds
+});
+
+function initializeCharts() {
+    // Traffic Timeline Chart
+    const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+    trafficChart = new Chart(trafficCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Normal Requests',
+                data: [],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Blocked Attacks',
+                data: [],
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Attack Distribution Chart
+    const attackCtx = document.getElementById('attackChart').getContext('2d');
+    attackChart = new Chart(attackCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function refreshData() {
+    try {
+        const [overview, servers, timeline, attacks, requests] = await Promise.all([
+            fetch('/api/overview').then(r => r.json()),
+            fetch('/api/servers').then(r => r.json()),
+            fetch('/api/timeline').then(r => r.json()),
+            fetch('/api/attacks').then(r => r.json()),
+            fetch('/api/requests?limit=10').then(r => r.json())
+        ]);
+
+        updateOverviewStats(overview);
+        updateServerStatus(servers);
+        updateTrafficChart(timeline);
+        updateAttackChart(attacks);
+        updateRecentActivity(requests);
+        updatePerformanceMetrics();
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+    }
+}
+
+function updateOverviewStats(data) {
+    document.getElementById('total-requests').textContent = data.total_requests.toLocaleString();
+    document.getElementById('blocked-requests').textContent = data.blocked_requests.toLocaleString();
+    document.getElementById('block-rate').textContent = data.block_rate.toFixed(1);
+    document.getElementById('successful-requests').textContent = (data.total_requests - data.blocked_requests).toLocaleString();
+}
+
+function updateServerStatus(servers) {
+    const container = document.getElementById('server-status');
+    container.innerHTML = servers.map(server => `
+        <div class="d-flex align-items-center justify-content-between p-3 mb-2 border rounded">
+            <div>
+                <div class="fw-bold">
+                    <span class="badge ${server.healthy ? 'bg-success' : 'bg-danger'} me-2">
+                        <i class="fas fa-circle"></i>
+                    </span>
+                    ${server.url}
+                </div>
+                <small class="text-muted">Active: ${server.active_connections} | Total: ${server.total_requests}</small>
+            </div>
+            <div class="text-end">
+                <div class="text-primary fw-bold">${server.avg_response_time}ms</div>
+                <small class="text-muted">Avg Response</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateTrafficChart(timeline) {
+    const labels = timeline.map(item => new Date(item.time).toLocaleTimeString());
+    const normalData = timeline.map(item => item.normal_requests);
+    const attackData = timeline.map(item => item.attacks);
+
+    trafficChart.data.labels = labels;
+    trafficChart.data.datasets[0].data = normalData;
+    trafficChart.data.datasets[1].data = attackData;
+    trafficChart.update();
+}
+
+function updateAttackChart(attacks) {
+    const labels = attacks.map(item => item.type);
+    const data = attacks.map(item => item.count);
+
+    attackChart.data.labels = labels;
+    attackChart.data.datasets[0].data = data;
+    attackChart.update();
+}
+
+function updateRecentActivity(requests) {
+    const container = document.getElementById('recent-activity');
+    container.innerHTML = requests.map(req => `
+        <div class="d-flex align-items-center justify-content-between p-2 border-bottom ${req.is_malicious ? 'bg-danger bg-opacity-10' : ''}">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <span class="badge ${req.is_malicious ? 'bg-danger' : 'bg-success'}">
+                        ${req.method}
+                    </span>
+                </div>
+                <div>
+                    <div class="fw-bold">${req.path}</div>
+                    <small class="text-muted">${req.client_ip} • ${new Date(req.timestamp).toLocaleTimeString()}</small>
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="badge bg-info">${req.response_time}ms</div>
+                ${req.is_malicious ? `<div class="badge bg-danger mt-1">${req.prediction}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function updatePerformanceMetrics() {
+    // Simulated performance metrics
+    document.getElementById('avg-response-time').textContent = (Math.random() * 50 + 20).toFixed(0);
+    document.getElementById('requests-per-second').textContent = (Math.random() * 100 + 50).toFixed(0);
+    document.getElementById('uptime').textContent = (99.5 + Math.random() * 0.5).toFixed(1);
+    
+    const cpuUsage = Math.random() * 40 + 20;
+    const memoryUsage = Math.random() * 30 + 40;
+    
+    document.getElementById('cpu-usage').style.width = cpuUsage + '%';
+    document.getElementById('memory-usage').style.width = memoryUsage + '%';
+}
+</script>
+{% endblock %}

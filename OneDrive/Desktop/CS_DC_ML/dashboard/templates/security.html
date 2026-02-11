@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Security Center - AI-Powered Secure Load Balancer{% endblock %}
+
+{% block content %}
+<div class="row g-4 p-4">
+    <!-- Header -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 mb-0">
+                            <i class="fas fa-shield-alt text-danger me-3"></i>
+                            Security Center
+                        </h1>
+                        <p class="text-muted mb-0">Real-time threat detection and security monitoring</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="badge bg-danger pulse">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Threat Detection Active
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Status Overview -->
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="threats-blocked">-</div>
+                <div class="metric-label">Threats Blocked</div>
+                <div class="mt-2">
+                    <i class="fas fa-ban fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="false-positives">-</div>
+                <div class="metric-label">False Positives</div>
+                <div class="mt-2">
+                    <i class="fas fa-exclamation-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="detection-rate">-</div>
+                <div class="metric-label">Detection Rate %</div>
+                <div class="mt-2">
+                    <i class="fas fa-crosshairs fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="active-rules">-</div>
+                <div class="metric-label">Active Rules</div>
+                <div class="mt-2">
+                    <i class="fas fa-list-check fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Threat Map -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-globe-americas me-2"></i>
+                    Global Threat Map
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="threatMapChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-fire me-2"></i>
+                    Top Attack Sources
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="top-attack-sources">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attack Types Analysis -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Attack Types Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="attackTypesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Attack Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="attackTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Rules -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Active Security Rules
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rule Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Blocked Count</th>
+                                <th>False Positives</th>
+                                <th>Accuracy</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="security-rules">
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Security Events -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Recent Security Events
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="security-events">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let threatMapChart, attackTypesChart, attackTimelineChart;
+
+// Initialize security page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadSecurityData();
+    setInterval(loadSecurityData, 8000); // Refresh every 8 seconds
+});
+
+function initializeCharts() {
+    // Threat Map Chart
+    const threatMapCtx = document.getElementById('threatMapChart').getContext('2d');
+    threatMapChart = new Chart(threatMapCtx, {
+        type: 'bubble',
+        data: {
+            datasets: [{
+                label: 'Threat Sources',
+                data: [
+                    {x: -74.0, y: 40.7, r: 15}, // New York
+                    {x: 2.3, y: 48.9, r: 12},   // Paris
+                    {x: 139.7, y: 35.7, r: 20}, // Tokyo
+                    {x: -0.1, y: 51.5, r: 8},   // London
+                    {x: 116.4, y: 39.9, r: 18}, // Beijing
+                    {x: -23.5, y: -46.6, r: 10}, // São Paulo
+                    {x: 151.2, y: -33.9, r: 6},  // Sydney
+                    {x: 37.6, y: 55.8, r: 14},  // Moscow
+                ],
+                backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                borderColor: 'rgba(239, 68, 68, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    min: -180,
+                    max: 180,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    min: -90,
+                    max: 90,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const locations = ['New York', 'Paris', 'Tokyo', 'London', 'Beijing', 'São Paulo', 'Sydney', 'Moscow'];
+                            const index = context.dataIndex;
+                            return `${locations[index]}: ${context.parsed.r} threats`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Attack Types Chart
+    const attackTypesCtx = document.getElementById('attackTypesChart').getContext('2d');
+    attackTypesChart = new Chart(attackTypesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['SQL Injection', 'XSS', 'Path Traversal', 'Command Injection', 'DoS', 'Brute Force', 'Zero-day'],
+            datasets: [{
+                data: [35, 25, 15, 10, 8, 5, 2],
+                backgroundColor: [
+                    '#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#6366f1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Attack Timeline Chart
+    const attackTimelineCtx = document.getElementById('attackTimelineChart').getContext('2d');
+    attackTimelineChart = new Chart(attackTimelineCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Blocked Attacks',
+                data: [],
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'False Positives',
+                data: [],
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+async function loadSecurityData() {
+    try {
+        // Simulate security metrics
+        document.getElementById('threats-blocked').textContent = (Math.random() * 500 + 200).toFixed(0);
+        document.getElementById('false-positives').textContent = (Math.random() * 20 + 5).toFixed(0);
+        document.getElementById('detection-rate').textContent = (95 + Math.random() * 4).toFixed(1);
+        document.getElementById('active-rules').textContent = Math.floor(Math.random() * 50 + 100);
+        
+        // Update top attack sources
+        updateTopAttackSources();
+        
+        // Update security rules
+        updateSecurityRules();
+        
+        // Update recent security events
+        updateSecurityEvents();
+        
+        // Update attack timeline
+        updateAttackTimeline();
+        
+    } catch (error) {
+        console.error('Error loading security data:', error);
+    }
+}
+
+function updateTopAttackSources() {
+    const sources = [
+        {ip: '192.168.1.100', country: '🇺🇸', attacks: 45},
+        {ip: '10.0.0.15', country: '🇨🇳', attacks: 38},
+        {ip: '172.16.0.5', country: '🇷🇺', attacks: 32},
+        {ip: '203.0.113.10', country: '🇧🇷', attacks: 28},
+        {ip: '185.220.101.5', country: '🇬🇧', attacks: 25}
+    ];
+    
+    const sourcesHtml = sources.map(source => `
+        <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+            <div>
+                <div class="fw-bold">${source.ip}</div>
+                <small class="text-muted">${source.country}</small>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-danger">${source.attacks}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('top-attack-sources').innerHTML = sourcesHtml;
+}
+
+function updateSecurityRules() {
+    const rules = [
+        {name: 'SQL Injection Detection', type: 'Pattern Matching', status: 'Active', blocked: 156, falsePositives: 3, accuracy: 98.1},
+        {name: 'XSS Protection', type: 'Heuristic Analysis', status: 'Active', blocked: 89, falsePositives: 7, accuracy: 92.1},
+        {name: 'Path Traversal Block', type: 'Regex Filter', status: 'Active', blocked: 45, falsePositives: 1, accuracy: 97.8},
+        {name: 'Command Injection', type: 'Signature Based', status: 'Active', blocked: 23, falsePositives: 2, accuracy: 91.3},
+        {name: 'DoS Protection', type: 'Rate Limiting', status: 'Active', blocked: 67, falsePositives: 5, accuracy: 92.5},
+        {name: 'Brute Force Detection', type: 'Behavioral', status: 'Active', blocked: 34, falsePositives: 8, accuracy: 76.5}
+    ];
+    
+    const rulesHtml = rules.map(rule => `
+        <tr>
+            <td>${rule.name}</td>
+            <td><span class="badge bg-info">${rule.type}</span></td>
+            <td><span class="badge bg-success">${rule.status}</span></td>
+            <td>${rule.blocked}</td>
+            <td>${rule.falsePositives}</td>
+            <td>${rule.accuracy}%</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editRule('${rule.name}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="toggleRule('${rule.name}')">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('security-rules').innerHTML = rulesHtml;
+}
+
+function updateSecurityEvents() {
+    const events = [
+        {time: new Date(Date.now() - 300000), type: 'SQL Injection', severity: 'High', source: '192.168.1.100', blocked: true},
+        {time: new Date(Date.now() - 600000), type: 'XSS Attempt', severity: 'Medium', source: '10.0.0.15', blocked: true},
+        {time: new Date(Date.now() - 900000), type: 'Path Traversal', severity: 'High', source: '172.16.0.5', blocked: true},
+        {time: new Date(Date.now() - 1200000), type: 'Brute Force', severity: 'Low', source: '203.0.113.10', blocked: false},
+        {time: new Date(Date.now() - 1500000), type: 'DoS Attack', severity: 'Critical', source: '185.220.101.5', blocked: true}
+    ];
+    
+    const eventsHtml = events.map(event => `
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom ${event.severity === 'Critical' ? 'bg-danger bg-opacity-10' : event.severity === 'High' ? 'bg-warning bg-opacity-10' : ''}">
+            <div>
+                <div class="fw-bold">${event.type}</div>
+                <small class="text-muted">${event.source} • ${event.time.toLocaleTimeString()}</small>
+            </div>
+            <div class="text-end">
+                <span class="badge ${event.blocked ? 'bg-success' : 'bg-warning'}">${event.blocked ? 'Blocked' : 'Allowed'}</span>
+                <span class="badge bg-${event.severity === 'Critical' ? 'danger' : event.severity === 'High' ? 'warning' : 'info'} ms-2">${event.severity}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('security-events').innerHTML = eventsHtml;
+}
+
+function updateAttackTimeline() {
+    const labels = [];
+    const blockedData = [];
+    const falsePositiveData = [];
+    
+    for (let i = 23; i >= 0; i--) {
+        labels.push(`${i}:00`);
+        blockedData.push(Math.floor(Math.random() * 20 + 5));
+        falsePositiveData.push(Math.floor(Math.random() * 5 + 1));
+    }
+    
+    attackTimelineChart.data.labels = labels;
+    attackTimelineChart.data.datasets[0].data = blockedData;
+    attackTimelineChart.data.datasets[1].data = falsePositiveData;
+    attackTimelineChart.update();
+}
+
+function editRule(ruleName) {
+    alert(`Editing rule: ${ruleName}\nThis would open a modal to configure the rule parameters.`);
+}
+
+function toggleRule(ruleName) {
+    if (confirm(`Toggle rule: ${ruleName}\nAre you sure you want to ${Math.random() > 0.5 ? 'disable' : 'enable'} this rule?`)) {
+        loadSecurityData(); // Reload to show change
+    }
+}
+</script>
+{% endblock %}

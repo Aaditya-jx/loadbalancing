@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block title %}System Logs - AI-Powered Secure Load Balancer{% endblock %}
+
+{% block content %}
+<div class="row g-4 p-4">
+    <!-- Header -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 mb-0">
+                            <i class="fas fa-list text-secondary me-3"></i>
+                            System Logs
+                        </h1>
+                        <p class="text-muted mb-0">Real-time system and security event logs</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="refreshLogs()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="exportLogs()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="clearLogs()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Statistics -->
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <div class="metric-value" id="total-logs">-</div>
+                <div class="metric-label">Total Logs</div>
+                <div class="mt-2">
+                    <i class="fas fa-file-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="error-logs">-</div>
+                <div class="metric-label">Error Logs</div>
+                <div class="mt-2">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="security-logs">-</div>
+                <div class="metric-label">Security Logs</div>
+                <div class="mt-2">
+                    <i class="fas fa-shield-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="today-logs">-</div>
+                <div class="metric-label">Today's Logs</div>
+                <div class="mt-2">
+                    <i class="fas fa-calendar-day fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Filters -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>
+                    Log Filters
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="log-level" class="form-label">Log Level</label>
+                        <select class="form-select" id="log-level" onchange="filterLogs()">
+                            <option value="all">All Levels</option>
+                            <option value="error">Error</option>
+                            <option value="warning">Warning</option>
+                            <option value="info">Info</option>
+                            <option value="debug">Debug</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="log-category" class="form-label">Category</label>
+                        <select class="form-select" id="log-category" onchange="filterLogs()">
+                            <option value="all">All Categories</option>
+                            <option value="system">System</option>
+                            <option value="security">Security</option>
+                            <option value="performance">Performance</option>
+                            <option value="access">Access</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="time-range" class="form-label">Time Range</label>
+                        <select class="form-select" id="time-range" onchange="filterLogs()">
+                            <option value="1h">Last Hour</option>
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="search-term" class="form-label">Search</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search-term" placeholder="Search logs..." onkeyup="searchLogs(event)">
+                            <button class="btn btn-outline-secondary" type="button" onclick="searchLogs()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Viewer -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Log Entries
+                    <div class="float-end">
+                        <span class="badge bg-info" id="log-count">0</span> entries
+                    </div>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="log-viewer" id="log-viewer" style="height: 500px; overflow-y: auto; background: #1e1e1e; border-radius: 5px; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px;">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                        <p>Loading logs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Analysis -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Log Level Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="logLevelChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Timeline Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let logLevelChart, timelineChart;
+let allLogs = [];
+let filteredLogs = [];
+
+// Initialize logs page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadLogs();
+    setInterval(loadLogs, 10000); // Refresh every 10 seconds
+});
+
+function initializeCharts() {
+    // Log Level Distribution Chart
+    const logLevelCtx = document.getElementById('logLevelChart').getContext('2d');
+    logLevelChart = new Chart(logLevelCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Error', 'Warning', 'Info', 'Debug'],
+            datasets: [{
+                label: 'Log Count',
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#6b7280']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Timeline Activity Chart
+    const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+    timelineChart = new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Log Entries',
+                data: [],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+async function loadLogs() {
+    try {
+        // Simulate log generation
+        generateSampleLogs();
+        updateLogStatistics();
+        updateLogViewer();
+        updateCharts();
+        
+    } catch (error) {
+        console.error('Error loading logs:', error);
+    }
+}
+
+function generateSampleLogs() {
+    const levels = ['error', 'warning', 'info', 'debug'];
+    const categories = ['system', 'security', 'performance', 'access'];
+    const messages = [
+        'Load balancer started successfully',
+        'SQL injection attempt blocked from 192.168.1.100',
+        'Server 1 health check passed',
+        'High CPU usage detected on Server 2',
+        'XSS attack prevented',
+        'Database connection established',
+        'Rate limit exceeded for IP 10.0.0.15',
+        'Configuration reloaded successfully',
+        'Memory usage warning on Server 3',
+        'New security rule activated',
+        'Connection pool exhausted',
+        'Failed login attempt detected',
+        'Cache cleared successfully',
+        'Backup completed',
+        'SSL certificate renewed',
+        'DDoS mitigation activated',
+        'Performance optimization applied'
+    ];
+    
+    allLogs = [];
+    const now = new Date();
+    
+    // Generate logs for the last 24 hours
+    for (let i = 0; i < 200; i++) {
+        const timestamp = new Date(now.getTime() - Math.random() * 24 * 60 * 60 * 1000);
+        const level = levels[Math.floor(Math.random() * levels.length)];
+        const category = categories[Math.floor(Math.random() * categories.length)];
+        const message = messages[Math.floor(Math.random() * messages.length)];
+        
+        allLogs.push({
+            id: i + 1,
+            timestamp: timestamp,
+            level: level,
+            category: category,
+            message: message,
+            source: Math.random() > 0.5 ? 'Load Balancer' : `Server ${Math.floor(Math.random() * 3 + 1)}`,
+            ip: `192.168.1.${Math.floor(Math.random() * 255)}` || '10.0.0.' + Math.floor(Math.random() * 255)
+        });
+    }
+    
+    // Sort by timestamp (newest first)
+    allLogs.sort((a, b) => b.timestamp - a.timestamp);
+    filteredLogs = [...allLogs];
+}
+
+function updateLogStatistics() {
+    const errorCount = filteredLogs.filter(log => log.level === 'error').length;
+    const securityCount = filteredLogs.filter(log => log.category === 'security').length;
+    const todayCount = filteredLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        const today = new Date();
+        return logDate.toDateString() === today.toDateString();
+    }).length;
+    
+    document.getElementById('total-logs').textContent = filteredLogs.length;
+    document.getElementById('error-logs').textContent = errorCount;
+    document.getElementById('security-logs').textContent = securityCount;
+    document.getElementById('today-logs').textContent = todayCount;
+    document.getElementById('log-count').textContent = filteredLogs.length;
+}
+
+function updateLogViewer() {
+    const logViewer = document.getElementById('log-viewer');
+    
+    if (filteredLogs.length === 0) {
+        logViewer.innerHTML = '<div class="text-center text-muted"><i class="fas fa-info-circle fa-2x mb-3"></i><p>No logs found matching current filters</p></div>';
+        return;
+    }
+    
+    const logHtml = filteredLogs.map(log => {
+        const levelClass = {
+            'error': 'text-danger',
+            'warning': 'text-warning',
+            'info': 'text-info',
+            'debug': 'text-secondary'
+        }[log.level] || 'text-secondary';
+        
+        const levelIcon = {
+            'error': 'fa-exclamation-circle',
+            'warning': 'fa-exclamation-triangle',
+            'info': 'fa-info-circle',
+            'debug': 'fa-bug'
+        }[log.level] || 'fa-info-circle';
+        
+        return `
+            <div class="log-entry mb-2 p-2 border-bottom border-secondary">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="mb-1">
+                            <i class="fas ${levelIcon} ${levelClass} me-2"></i>
+                            <span class="${levelClass} fw-bold">[${log.level.toUpperCase()}]</span>
+                            <span class="badge bg-secondary ms-2">${log.category}</span>
+                            <small class="text-muted ms-2">${log.source}</small>
+                        </div>
+                        <div>${log.message}</div>
+                        <div class="text-muted small">
+                            <i class="fas fa-clock me-1"></i>${log.timestamp.toLocaleString()}
+                            <span class="ms-3"><i class="fas fa-network-wired me-1"></i>${log.ip}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    logViewer.innerHTML = logHtml;
+    logViewer.scrollTop = 0; // Scroll to top
+}
+
+function updateCharts() {
+    // Update log level distribution
+    const levelCounts = {
+        error: filteredLogs.filter(log => log.level === 'error').length,
+        warning: filteredLogs.filter(log => log.level === 'warning').length,
+        info: filteredLogs.filter(log => log.level === 'info').length,
+        debug: filteredLogs.filter(log => log.level === 'debug').length
+    };
+    
+    logLevelChart.data.datasets[0].data = [
+        levelCounts.error,
+        levelCounts.warning,
+        levelCounts.info,
+        levelCounts.debug
+    ];
+    logLevelChart.update();
+    
+    // Update timeline chart
+    const hourlyCounts = {};
+    filteredLogs.forEach(log => {
+        const hour = new Date(log.timestamp).getHours();
+        hourlyCounts[hour] = (hourlyCounts[hour] || 0) + 1;
+    });
+    
+    const hours = Array.from({length: 24}, (_, i) => `${i}:00`);
+    const counts = hours.map(hour => hourlyCounts[parseInt(hour)] || 0);
+    
+    timelineChart.data.labels = hours;
+    timelineChart.data.datasets[0].data = counts;
+    timelineChart.update();
+}
+
+function filterLogs() {
+    const level = document.getElementById('log-level').value;
+    const category = document.getElementById('log-category').value;
+    const searchTerm = document.getElementById('search-term').value.toLowerCase();
+    
+    filteredLogs = allLogs.filter(log => {
+        const levelMatch = level === 'all' || log.level === level;
+        const categoryMatch = category === 'all' || log.category === category;
+        const searchMatch = !searchTerm || 
+                           log.message.toLowerCase().includes(searchTerm) ||
+                           log.source.toLowerCase().includes(searchTerm) ||
+                           log.ip.includes(searchTerm);
+        
+        return levelMatch && categoryMatch && searchMatch;
+    });
+    
+    updateLogStatistics();
+    updateLogViewer();
+    updateCharts();
+}
+
+function searchLogs(event) {
+    if (event.key === 'Enter') {
+        filterLogs();
+    }
+}
+
+function refreshLogs() {
+    generateSampleLogs();
+    filterLogs();
+}
+
+function exportLogs() {
+    const logText = filteredLogs.map(log => 
+        `${log.timestamp.toISOString()} [${log.level.toUpperCase()}] ${log.category} ${log.source} - ${log.message}`
+    ).join('\n');
+    
+    const blob = new Blob([logText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logs_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function clearLogs() {
+    if (confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+        allLogs = [];
+        filteredLogs = [];
+        updateLogStatistics();
+        updateLogViewer();
+        updateCharts();
+    }
+}
+</script>
+{% endblock %}

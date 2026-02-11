@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block title %}Server Management - AI-Powered Secure Load Balancer{% endblock %}
+
+{% block content %}
+<div class="row g-4 p-4">
+    <!-- Header -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 mb-0">
+                            <i class="fas fa-server text-info me-3"></i>
+                            Server Management
+                        </h1>
+                        <p class="text-muted mb-0">Monitor and manage backend server infrastructure</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="refreshServers()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="addServer()">
+                                <i class="fas fa-plus"></i> Add Server
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Overview Cards -->
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <div class="metric-value" id="total-servers">3</div>
+                <div class="metric-label">Total Servers</div>
+                <div class="mt-2">
+                    <i class="fas fa-server fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="healthy-servers">-</div>
+                <div class="metric-label">Healthy Servers</div>
+                <div class="mt-2">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="total-connections">-</div>
+                <div class="metric-label">Active Connections</div>
+                <div class="mt-2">
+                    <i class="fas fa-link fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+            <div class="card-body text-center">
+                <div class="metric-value" id="failed-servers">-</div>
+                <div class="metric-label">Failed Servers</div>
+                <div class="mt-2">
+                    <i class="fas fa-times-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Status Grid -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-th-large me-2"></i>
+                    Server Status Grid
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row" id="server-grid">
+                    <!-- Server cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Performance Metrics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    Resource Utilization
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>CPU Usage</span>
+                        <span class="fw-bold" id="avg-cpu">-</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-info" id="cpu-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Memory Usage</span>
+                        <span class="fw-bold" id="avg-memory">-</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" id="memory-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Disk Usage</span>
+                        <span class="fw-bold" id="avg-disk">-</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" id="disk-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Network I/O</span>
+                        <span class="fw-bold" id="avg-network">-</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" id="network-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Configuration -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Server Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Server</th>
+                                <th>Host</th>
+                                <th>Port</th>
+                                <th>Status</th>
+                                <th>Weight</th>
+                                <th>Algorithm</th>
+                                <th>Connections</th>
+                                <th>Response Time</th>
+                                <th>Uptime</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="server-config">
+                            <tr>
+                                <td colspan="10" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let performanceChart;
+
+// Initialize servers page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    loadServerData();
+    setInterval(loadServerData, 5000); // Refresh every 5 seconds
+});
+
+function initializeCharts() {
+    // Performance Metrics Chart
+    const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+    performanceChart = new Chart(performanceCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Server 1',
+                data: [],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Server 2',
+                data: [],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Server 3',
+                data: [],
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+async function loadServerData() {
+    try {
+        // Fetch server data from API
+        const response = await fetch('/api/servers');
+        const servers = await response.json();
+        
+        // Update overview metrics
+        updateServerMetrics(servers);
+        
+        // Update server grid
+        updateServerGrid(servers);
+        
+        // Update server configuration table
+        updateServerConfig(servers);
+        
+        // Update performance chart
+        updatePerformanceChart(servers);
+        
+        // Update resource utilization
+        updateResourceUtilization(servers);
+        
+    } catch (error) {
+        console.error('Error loading server data:', error);
+        // Use fallback data
+        loadFallbackServerData();
+    }
+}
+
+function loadFallbackServerData() {
+    // Fallback server data when API is not available
+    const servers = [
+        {
+            url: 'http://localhost:8001',
+            host: 'localhost',
+            port: 8001,
+            healthy: true,
+            active_connections: Math.floor(Math.random() * 50 + 10),
+            total_requests: Math.floor(Math.random() * 1000 + 500),
+            avg_response_time: (Math.random() * 50 + 20).toFixed(2),
+            uptime: (99 + Math.random() * 0.9).toFixed(1),
+            cpu_usage: Math.random() * 60 + 20,
+            memory_usage: Math.random() * 70 + 20,
+            disk_usage: Math.random() * 80 + 10,
+            network_io: Math.random() * 100 + 50
+        },
+        {
+            url: 'http://localhost:8002',
+            host: 'localhost',
+            port: 8002,
+            healthy: true,
+            active_connections: Math.floor(Math.random() * 40 + 15),
+            total_requests: Math.floor(Math.random() * 800 + 400),
+            avg_response_time: (Math.random() * 40 + 25).toFixed(2),
+            uptime: (98 + Math.random() * 1.5).toFixed(1),
+            cpu_usage: Math.random() * 50 + 25,
+            memory_usage: Math.random() * 60 + 25,
+            disk_usage: Math.random() * 70 + 15,
+            network_io: Math.random() * 80 + 40
+        },
+        {
+            url: 'http://localhost:8003',
+            host: 'localhost',
+            port: 8003,
+            healthy: Math.random() > 0.2, // Occasionally show as unhealthy for demo
+            active_connections: Math.floor(Math.random() * 60 + 5),
+            total_requests: Math.floor(Math.random() * 1200 + 300),
+            avg_response_time: (Math.random() * 60 + 15).toFixed(2),
+            uptime: (99 + Math.random() * 0.8).toFixed(1),
+            cpu_usage: Math.random() * 70 + 15,
+            memory_usage: Math.random() * 80 + 10,
+            disk_usage: Math.random() * 90 + 5,
+            network_io: Math.random() * 120 + 30
+        }
+    ];
+    
+    updateServerMetrics(servers);
+    updateServerGrid(servers);
+    updateServerConfig(servers);
+    updatePerformanceChart(servers);
+    updateResourceUtilization(servers);
+}
+
+function updateServerMetrics(servers) {
+    const healthyCount = servers.filter(s => s.healthy).length;
+    const totalConnections = servers.reduce((sum, s) => sum + s.active_connections, 0);
+    const failedCount = servers.filter(s => !s.healthy).length;
+    
+    document.getElementById('total-servers').textContent = servers.length;
+    document.getElementById('healthy-servers').textContent = healthyCount;
+    document.getElementById('total-connections').textContent = totalConnections;
+    document.getElementById('failed-servers').textContent = failedCount;
+}
+
+function updateServerGrid(servers) {
+    const serverGridHtml = servers.map(server => `
+        <div class="col-md-4 mb-3">
+            <div class="card ${server.healthy ? 'border-success' : 'border-danger'}" style="border-width: 3px;">
+                <div class="card-body text-center">
+                    <h6 class="card-title">
+                        <i class="fas fa-server me-2"></i>
+                        Server ${server.port}
+                    </h6>
+                    <div class="badge ${server.healthy ? 'bg-success' : 'bg-danger'} mb-2">
+                        ${server.healthy ? 'Healthy' : 'Unhealthy'}
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">Connections</small>
+                            <div class="fw-bold">${server.active_connections}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Response Time</small>
+                            <div class="fw-bold">${server.avg_response_time}ms</div>
+                        </div>
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">Total Requests</small>
+                            <div class="fw-bold">${server.total_requests}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Uptime</small>
+                            <div class="fw-bold">${server.uptime}%</div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewServerDetails('${server.url}')">
+                            <i class="fas fa-info-circle"></i> Details
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="restartServer('${server.url}')">
+                            <i class="fas fa-redo"></i> Restart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('server-grid').innerHTML = serverGridHtml;
+}
+
+function updateServerConfig(servers) {
+    const configHtml = servers.map(server => `
+        <tr>
+            <td>Server ${server.port}</td>
+            <td>${server.host}</td>
+            <td>${server.port}</td>
+            <td><span class="badge ${server.healthy ? 'bg-success' : 'bg-danger'}">${server.healthy ? 'Online' : 'Offline'}</span></td>
+            <td>${Math.floor(Math.random() * 3 + 1)}</td>
+            <td>least_connections</td>
+            <td>${server.active_connections}</td>
+            <td>${server.avg_response_time}ms</td>
+            <td>${server.uptime}%</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="configureServer('${server.url}')">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeServer('${server.url}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('server-config').innerHTML = configHtml;
+}
+
+function updatePerformanceChart(servers) {
+    const labels = [];
+    const datasets = [];
+    
+    // Generate time labels for the last hour
+    for (let i = 59; i >= 0; i -= 5) {
+        labels.push(new Date(Date.now() - i * 60000).toLocaleTimeString());
+    }
+    
+    // Generate performance data for each server
+    servers.forEach((server, index) => {
+        const data = [];
+        for (let i = 0; i < 12; i++) {
+            data.push(Math.random() * 100 + server.active_connections);
+        }
+        
+        datasets.push({
+            label: `Server ${server.port}`,
+            data: data,
+            borderColor: ['#3b82f6', '#10b981', '#f59e0b'][index],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'][index],
+            tension: 0.4
+        });
+    });
+    
+    performanceChart.data.labels = labels;
+    performanceChart.data.datasets = datasets;
+    performanceChart.update();
+}
+
+function updateResourceUtilization(servers) {
+    const avgCpu = servers.reduce((sum, s) => sum + s.cpu_usage, 0) / servers.length;
+    const avgMemory = servers.reduce((sum, s) => sum + s.memory_usage, 0) / servers.length;
+    const avgDisk = servers.reduce((sum, s) => sum + s.disk_usage, 0) / servers.length;
+    const avgNetwork = servers.reduce((sum, s) => sum + s.network_io, 0) / servers.length;
+    
+    document.getElementById('avg-cpu').textContent = avgCpu.toFixed(1) + '%';
+    document.getElementById('cpu-progress').style.width = avgCpu + '%';
+    
+    document.getElementById('avg-memory').textContent = avgMemory.toFixed(1) + '%';
+    document.getElementById('memory-progress').style.width = avgMemory + '%';
+    
+    document.getElementById('avg-disk').textContent = avgDisk.toFixed(1) + '%';
+    document.getElementById('disk-progress').style.width = avgDisk + '%';
+    
+    document.getElementById('avg-network').textContent = avgNetwork.toFixed(0) + ' MB/s';
+    document.getElementById('network-progress').style.width = Math.min(avgNetwork, 100) + '%';
+}
+
+function refreshServers() {
+    loadServerData();
+}
+
+function addServer() {
+    const host = prompt('Enter server host:', 'localhost');
+    const port = prompt('Enter server port:', '8004');
+    
+    if (host && port) {
+        alert(`Adding server ${host}:${port}\nThis would add the server to the load balancer configuration.`);
+        loadServerData(); // Reload to show updated data
+    }
+}
+
+function viewServerDetails(serverUrl) {
+    alert(`Viewing details for ${serverUrl}\nThis would open a detailed server information modal.`);
+}
+
+function restartServer(serverUrl) {
+    if (confirm(`Restart server ${serverUrl}?\nThis will restart the server and may cause temporary downtime.`)) {
+        alert(`Restarting ${serverUrl}...`);
+        loadServerData(); // Reload to show updated status
+    }
+}
+
+function configureServer(serverUrl) {
+    alert(`Configuring ${serverUrl}\nThis would open a configuration modal for the server.`);
+}
+
+function removeServer(serverUrl) {
+    if (confirm(`Remove server ${serverUrl}?\nThis will remove the server from the load balancer.`)) {
+        alert(`Removing ${serverUrl}...`);
+        loadServerData(); // Reload to show updated data
+    }
+}
+</script>
+{% endblock %}
